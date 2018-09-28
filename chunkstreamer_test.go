@@ -1,4 +1,4 @@
-package chunkstreamer
+package chunkstreamer_test
 
 import (
 	"bytes"
@@ -6,6 +6,7 @@ import (
 	"io"
 	"testing"
 
+	"github.com/dpirotte/go-chunkstreamer"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -17,7 +18,7 @@ func TestHappyPath(t *testing.T) {
 	}
 
 	var buf bytes.Buffer
-	w := NewWriter(&buf)
+	w := chunkstreamer.NewWriter(&buf)
 
 	l := 0
 	for _, chunk := range chunks {
@@ -29,7 +30,7 @@ func TestHappyPath(t *testing.T) {
 		assert.Equal(t, l, buf.Len())
 	}
 
-	r := NewReader(&buf)
+	r := chunkstreamer.NewReader(&buf)
 
 	for i := 0; i < len(chunks); i++ {
 		b, err := r.ReadChunk()
@@ -47,24 +48,24 @@ func TestHappyPath(t *testing.T) {
 
 func TestInvalidChecksum(t *testing.T) {
 	var buf bytes.Buffer
-	w := NewWriter(&buf)
+	w := chunkstreamer.NewWriter(&buf)
 
 	w.Write([]byte("This message will be garbled"))
 
 	bytes := buf.Bytes()
 	bytes[5]++ // mangle the first character of the chunk
 
-	r := NewReader(&buf)
+	r := chunkstreamer.NewReader(&buf)
 	b, err := r.ReadChunk()
 	assert.Nil(t, b)
 	if assert.Error(t, err) {
-		assert.Equal(t, ErrChecksum, err)
+		assert.Equal(t, chunkstreamer.ErrChecksum, err)
 	}
 }
 
 func benchmarkWrite(size int, b *testing.B) {
 	var buf bytes.Buffer
-	w := NewWriter(&buf)
+	w := chunkstreamer.NewWriter(&buf)
 
 	bytes := make([]byte, size)
 	rand.Read(bytes)
