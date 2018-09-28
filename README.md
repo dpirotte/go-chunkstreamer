@@ -3,6 +3,8 @@
 [![GoDoc](https://godoc.org/github.com/dpirotte/chunkstreamer?status.svg)](https://godoc.org/github.com/dpirotte/chunkstreamer)
 [![Go Report
 Card](https://goreportcard.com/badge/github.com/dpirotte/go-chunkstreamer)](https://goreportcard.com/report/github.com/dpirotte/go-chunkstreamer)
+[![Build
+Status](https://travis-ci.org/dpirotte/go-chunkstreamer.svg?branch=master)](https://travis-ci.org/dpirotte/go-chunkstreamer)
 
 chunkstreamer implements a Reader and Writer for reading, and writing, streams
 of irregularly sized "chunks" of bytes.
