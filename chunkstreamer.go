@@ -30,6 +30,10 @@ func (w *Writer) Write(b []byte) (int, error) {
 	}
 
 	err = binary.Write(w.wr, binary.BigEndian, xxhash.Sum64(b))
+	if err != nil {
+		return n, err
+	}
+
 	return n, nil
 }
 
