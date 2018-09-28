@@ -52,7 +52,7 @@ func TestInvalidChecksum(t *testing.T) {
 	w.Write([]byte("This message will be garbled"))
 
 	bytes := buf.Bytes()
-	bytes[5] += 1 // mangle the first character of the chunk
+	bytes[5]++ // mangle the first character of the chunk
 
 	r := NewReader(&buf)
 	b, err := r.ReadChunk()

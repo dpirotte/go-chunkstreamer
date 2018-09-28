@@ -4,7 +4,6 @@
 // Each chunk contains three parts: 4 bytes (uint32) representing the
 // following part's size, N bytes of data, and 8 bytes (uint64) of
 // checksum for the previous part.
-
 package chunkstreamer
 
 import (
