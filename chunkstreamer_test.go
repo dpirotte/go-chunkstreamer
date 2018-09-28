@@ -2,13 +2,14 @@ package chunkstreamer
 
 import (
 	"bytes"
+	"crypto/rand"
 	"io"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
 
-func TestWriteAndRead(t *testing.T) {
+func TestHappyPath(t *testing.T) {
 	chunks := [][]byte{
 		[]byte("This is a chunk."),
 		[]byte("This is a much longer chunk."),
@@ -24,7 +25,7 @@ func TestWriteAndRead(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		l += 4 + len(chunk)
+		l += 4 + len(chunk) + 8
 		assert.Equal(t, l, buf.Len())
 	}
 
@@ -43,3 +44,17 @@ func TestWriteAndRead(t *testing.T) {
 		assert.Equal(t, io.EOF, err)
 	}
 }
+
+func benchmarkWrite(size int, b *testing.B) {
+	var buf bytes.Buffer
+	w := NewWriter(&buf)
+
+	bytes := make([]byte, size)
+	rand.Read(bytes)
+	for i := 0; i < b.N; i++ {
+		w.Write(bytes)
+	}
+}
+
+func BenchmarkWrite1(b *testing.B)  { benchmarkWrite(1, b) }
+func BenchmarkWrite10(b *testing.B) { benchmarkWrite(10, b) }

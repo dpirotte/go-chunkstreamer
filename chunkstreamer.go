@@ -2,7 +2,10 @@ package chunkstreamer
 
 import (
 	"encoding/binary"
+	"errors"
 	"io"
+
+	"github.com/cespare/xxhash"
 )
 
 type Writer struct {
@@ -23,6 +26,8 @@ func (w *Writer) Write(b []byte) (int, error) {
 	if err != nil {
 		return n, err
 	}
+
+	err = binary.Write(w.wr, binary.BigEndian, xxhash.Sum64(b))
 	return n, nil
 }
 
@@ -46,6 +51,16 @@ func (r *Reader) ReadChunk() (b []byte, err error) {
 	_, err = io.ReadFull(r.rd, b)
 	if err != nil {
 		return nil, err
+	}
+
+	var checksum uint64
+	err = binary.Read(r.rd, binary.BigEndian, &checksum)
+	if err != nil {
+		return nil, err
+	}
+
+	if checksum != xxhash.Sum64(b) {
+		return nil, errors.New("invalid checksum")
 	}
 
 	return b, nil
