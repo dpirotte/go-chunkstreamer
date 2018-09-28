@@ -33,3 +33,20 @@ type Reader struct {
 func NewReader(r io.Reader) *Reader {
 	return &Reader{rd: r}
 }
+
+func (r *Reader) ReadChunk() (b []byte, err error) {
+	var l uint32
+
+	err = binary.Read(r.rd, binary.BigEndian, &l)
+	if err != nil {
+		return nil, err
+	}
+
+	b = make([]byte, l)
+	_, err = io.ReadFull(r.rd, b)
+	if err != nil {
+		return nil, err
+	}
+
+	return b, nil
+}
