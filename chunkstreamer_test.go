@@ -45,6 +45,23 @@ func TestHappyPath(t *testing.T) {
 	}
 }
 
+func TestInvalidChecksum(t *testing.T) {
+	var buf bytes.Buffer
+	w := NewWriter(&buf)
+
+	w.Write([]byte("This message will be garbled"))
+
+	bytes := buf.Bytes()
+	bytes[5] += 1 // mangle the first character of the chunk
+
+	r := NewReader(&buf)
+	b, err := r.ReadChunk()
+	assert.Nil(t, b)
+	if assert.Error(t, err) {
+		assert.Equal(t, ErrChecksum, err)
+	}
+}
+
 func benchmarkWrite(size int, b *testing.B) {
 	var buf bytes.Buffer
 	w := NewWriter(&buf)

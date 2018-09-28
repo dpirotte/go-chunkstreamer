@@ -8,6 +8,8 @@ import (
 	"github.com/cespare/xxhash"
 )
 
+var ErrChecksum = errors.New("chunkstreamer: invalid checksum")
+
 type Writer struct {
 	wr io.Writer
 }
@@ -60,7 +62,7 @@ func (r *Reader) ReadChunk() (b []byte, err error) {
 	}
 
 	if checksum != xxhash.Sum64(b) {
-		return nil, errors.New("invalid checksum")
+		return nil, ErrChecksum
 	}
 
 	return b, nil
