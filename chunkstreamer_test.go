@@ -34,14 +34,14 @@ func TestHappyPath(t *testing.T) {
 	r := chunkstreamer.NewReader(&buf)
 
 	for i := 0; i < len(chunks); i++ {
-		b, err := r.ReadChunk()
+		b, err := r.ReadFrame()
 		if err != nil {
 			t.Fatal(err)
 		}
 		assert.Equal(t, b, chunks[i])
 	}
 
-	_, err := r.ReadChunk()
+	_, err := r.ReadFrame()
 	if assert.Error(t, err) {
 		assert.Equal(t, io.EOF, err)
 	}
@@ -57,7 +57,7 @@ func TestInvalidChecksum(t *testing.T) {
 	bytes[5]++ // mangle the first character of the chunk
 
 	r := chunkstreamer.NewReader(&buf)
-	b, err := r.ReadChunk()
+	b, err := r.ReadFrame()
 	assert.Nil(t, b)
 	if assert.Error(t, err) {
 		assert.Equal(t, chunkstreamer.ErrChecksum, err)
@@ -98,7 +98,7 @@ func benchmarkReadWriteBatch(size int, b *testing.B) {
 
 		r := chunkstreamer.NewReader(&buf)
 		for {
-			_, err := r.ReadChunk()
+			_, err := r.ReadFrame()
 			if err == io.EOF {
 				break
 			}

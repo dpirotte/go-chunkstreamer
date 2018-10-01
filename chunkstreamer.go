@@ -63,7 +63,7 @@ func NewReader(r io.Reader) *Reader {
 	return &Reader{rd: r}
 }
 
-// ReadChunk returns byte slices from the underlying io.Reader.
+// ReadFrame returns byte slices from the underlying io.Reader.
 // It first reads a uint32 from the io.Reader to determine how
 // many bytes to return in the byteslice. Then, it reads that
 // many bytes (the "data") into a byteslice and checksums against
@@ -73,7 +73,7 @@ func NewReader(r io.Reader) *Reader {
 //
 // Note: The caller takes responsibility for watching for io.EOF,
 // which will be bubbled up from the underlying reader.
-func (r *Reader) ReadChunk() (b []byte, err error) {
+func (r *Reader) ReadFrame() (b []byte, err error) {
 	var l uint32
 
 	err = binary.Read(r.rd, binary.BigEndian, &l)

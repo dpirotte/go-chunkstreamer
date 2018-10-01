@@ -52,7 +52,7 @@ func main() {
   w.Write([]byte("This string would more likely be a protobuf message."))
 
   r := chunkstreamer.NewReader(&buf)
-  b, err := r.ReadChunk()
+  b, err := r.ReadFrame()
   if err != nil {
     panic(err)
   }
