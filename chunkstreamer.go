@@ -9,6 +9,7 @@ package chunkstreamer
 import (
 	"encoding/binary"
 	"errors"
+	"hash"
 	"io"
 
 	"github.com/cespare/xxhash"
@@ -22,12 +23,16 @@ var ErrChecksum = errors.New("chunkstreamer: invalid checksum")
 // of the provided byte slice as a uint32, then writes the byte
 // slice, then writes a uint64 xxhash checksum of the byte slice.
 type Writer struct {
-	wr io.Writer
+	wr     io.Writer
+	hasher hash.Hash64
 }
 
 // NewWriter returns a new Writer writing to w.
 func NewWriter(w io.Writer) *Writer {
-	return &Writer{wr: w}
+	return &Writer{
+		wr:     w,
+		hasher: xxhash.New(),
+	}
 }
 
 // Write implements the io.Writer interface, but instead of just
@@ -44,10 +49,12 @@ func (w *Writer) Write(b []byte) (int, error) {
 		return n, err
 	}
 
-	err = binary.Write(w.wr, binary.BigEndian, xxhash.Sum64(b))
+	w.hasher.Write(b)
+	err = binary.Write(w.wr, binary.BigEndian, w.hasher.Sum64())
 	if err != nil {
 		return n, err
 	}
+	w.hasher.Reset()
 
 	return n, nil
 }
@@ -55,12 +62,16 @@ func (w *Writer) Write(b []byte) (int, error) {
 // A Reader is a wrapper designed to read chunks from an
 // underlying io.Reader
 type Reader struct {
-	rd io.Reader
+	rd     io.Reader
+	hasher hash.Hash64
 }
 
 // NewReader returns a new Reader reading from r.
 func NewReader(r io.Reader) *Reader {
-	return &Reader{rd: r}
+	return &Reader{
+		rd:     r,
+		hasher: xxhash.New(),
+	}
 }
 
 // ReadFrame returns byte slices from the underlying io.Reader.
@@ -93,9 +104,11 @@ func (r *Reader) ReadFrame() (b []byte, err error) {
 		return nil, err
 	}
 
-	if checksum != xxhash.Sum64(b) {
+	r.hasher.Write(b)
+	if checksum != r.hasher.Sum64() {
 		return nil, ErrChecksum
 	}
+	r.hasher.Reset()
 
 	return b, nil
 }
