@@ -3,6 +3,7 @@ package chunkstreamer_test
 import (
 	"bytes"
 	"crypto/rand"
+	"encoding/binary"
 	"encoding/json"
 	"io"
 	"testing"
@@ -27,7 +28,11 @@ func TestHappyPath(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		l += 4 + len(chunk) + 8
+
+		varintBuf := make([]byte, binary.MaxVarintLen64)
+		varintLen := binary.PutVarint(varintBuf, int64(len(chunk)))
+
+		l += varintLen + len(chunk) + 8
 		assert.Equal(t, l, buf.Len())
 	}
 

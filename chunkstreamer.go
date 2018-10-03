@@ -40,24 +40,27 @@ func NewWriter(w io.Writer) *Writer {
 // writing b to the underlying io.Writer, it first writes the length
 // of b, then writes b, then writes the xxhash checksum of b.
 func (w *Writer) Write(b []byte) (int, error) {
-	err := binary.Write(w.wr, binary.BigEndian, uint32(len(b)))
+	varintBuf := make([]byte, binary.MaxVarintLen64)
+	varintLen := binary.PutUvarint(varintBuf, uint64(len(b)))
+
+	n1, err := w.wr.Write(varintBuf[:varintLen])
 	if err != nil {
-		return 0, err
+		return n1, err
 	}
 
-	n, err := w.wr.Write(b)
+	n2, err := w.wr.Write(b)
 	if err != nil {
-		return n, err
+		return n2, err
 	}
 
 	w.hasher.Write(b)
 	err = binary.Write(w.wr, binary.BigEndian, w.hasher.Sum64())
 	if err != nil {
-		return n, err
+		return n2, err
 	}
 	w.hasher.Reset()
 
-	return n, nil
+	return n2, nil
 }
 
 // A Reader is a wrapper designed to read chunks from an
@@ -86,9 +89,7 @@ func NewReader(r io.Reader) *Reader {
 // Note: The caller takes responsibility for watching for io.EOF,
 // which will be bubbled up from the underlying reader.
 func (r *Reader) ReadFrame() (b []byte, err error) {
-	var l uint32
-
-	err = binary.Read(r.rd, binary.BigEndian, &l)
+	l, err := binary.ReadUvarint(r.rd)
 	if err != nil {
 		return nil, err
 	}
