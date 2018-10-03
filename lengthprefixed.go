@@ -1,9 +1,8 @@
 // Package lengthprefixed implements a Reader and Writer for reading,
-// and writing, streams of bytes containing irregularly sized "chunks".
+// and writing, data in length-prefixed frames.
 //
-// Each chunk contains three parts: 4 bytes (uint32) representing the
-// following part's size, N bytes of data, and 8 bytes (uint64) of
-// checksum for the previous part.
+// Each frame contains three parts: a varint representing the length of
+// the data, N bytes of data, and 8 bytes (uint64) of checksum for the data.
 package lengthprefixed
 
 import (
@@ -16,13 +15,11 @@ import (
 	"github.com/cespare/xxhash"
 )
 
-// ErrChecksum is returned when a chunk's computed data checksum
-// match the checksum recorded after the data
+// ErrChecksum is returned when frame data's computed checksum
+// match the provided checksum
 var ErrChecksum = errors.New("lengthprefixed: invalid checksum")
 
-// Writer implements an io.Writer that first writes the length
-// of the provided byte slice as a uint32, then writes the byte
-// slice, then writes a uint64 xxhash checksum of the byte slice.
+// Writer implements an io.Writer
 type Writer struct {
 	wr     io.Writer
 	hasher hash.Hash64
@@ -37,8 +34,9 @@ func NewWriter(w io.Writer) *Writer {
 }
 
 // Write implements the io.Writer interface, but instead of just
-// writing b to the underlying io.Writer, it first writes the length
-// of b, then writes b, then writes the xxhash checksum of b.
+// writing b to the underlying io.Writer, it writes a length-prefixed
+// frame containing a varint (length of b) + b + uint64 (xxhash checksum
+// of b).
 func (w *Writer) Write(b []byte) (int, error) {
 	varintBuf := make([]byte, binary.MaxVarintLen64)
 	varintLen := binary.PutUvarint(varintBuf, uint64(len(b)))
@@ -63,14 +61,13 @@ func (w *Writer) Write(b []byte) (int, error) {
 	return n2, nil
 }
 
-// A Reader is a wrapper designed to read chunks from an
-// underlying io.Reader
+// A Reader is a wrapper designed to read frames from an underlying io.Reader.
 type Reader struct {
 	rd     *bufio.Reader
 	hasher hash.Hash64
 }
 
-// NewReader returns a new Reader reading from r.
+// NewReader returns a new Reader wrapping r.
 func NewReader(r io.Reader) *Reader {
 	return &Reader{
 		rd:     bufio.NewReader(r),
@@ -78,13 +75,12 @@ func NewReader(r io.Reader) *Reader {
 	}
 }
 
-// ReadFrame returns byte slices from the underlying io.Reader.
-// It first reads a uint32 from the io.Reader to determine how
+// ReadFrame returns the data component of length-prefixed frames.
+// It first reads a varint from the io.Reader to determine how
 // many bytes to return in the byteslice. Then, it reads that
-// many bytes (the "data") into a byteslice and checksums against
-// the following uint64 via xxhash. If the checksum matches, the
-// byteslice will be returned to the caller. Otherwise, an
-// ErrChecksum will be returned.
+// many bytes into a byteslice and checksums against the following
+// int64 via xxhash. If the checksum matches, the byteslice will be
+// returned to the caller. Otherwise, an ErrChecksum will be returned.
 //
 // Note: The caller takes responsibility for watching for io.EOF,
 // which will be bubbled up from the underlying reader.
