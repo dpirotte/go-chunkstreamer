@@ -9,6 +9,8 @@ import (
 	"testing"
 
 	"github.com/dpirotte/go-lengthprefixed"
+	"github.com/dpirotte/go-lengthprefixed/test"
+	"github.com/golang/protobuf/proto"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -149,3 +151,85 @@ func BenchmarkReadWriteBatchJSON10(b *testing.B)      { benchmarkReadWriteBatchJ
 func BenchmarkReadWriteBatchJSON1000(b *testing.B)    { benchmarkReadWriteBatchJSON(1000, b) }
 func BenchmarkReadWriteBatchJSON100000(b *testing.B)  { benchmarkReadWriteBatchJSON(100000, b) }
 func BenchmarkReadWriteBatchJSON1000000(b *testing.B) { benchmarkReadWriteBatchJSON(1000000, b) }
+
+func benchmarkReadWriteBatchProto(size int, b *testing.B) {
+	msgs := test.Envelope{}
+
+	for i := 0; i < size; i++ {
+		msg := test.Message{Data: "This is a relatively short string message."}
+		msgs.Messages = append(msgs.Messages, &msg)
+	}
+
+	for i := 0; i < b.N; i++ {
+		raw, err := proto.Marshal(&msgs)
+		if err != nil {
+			panic(err)
+		}
+		var buf bytes.Buffer
+		buf.Write(raw)
+
+		var parsedMsgs test.Envelope
+		err = proto.Unmarshal(buf.Bytes(), &parsedMsgs)
+		if err != nil {
+			panic(err)
+		}
+
+		for range parsedMsgs.Messages {
+		}
+	}
+}
+
+func BenchmarkReadWriteBatchProto10(b *testing.B)      { benchmarkReadWriteBatchProto(10, b) }
+func BenchmarkReadWriteBatchProto1000(b *testing.B)    { benchmarkReadWriteBatchProto(1000, b) }
+func BenchmarkReadWriteBatchProto100000(b *testing.B)  { benchmarkReadWriteBatchProto(100000, b) }
+func BenchmarkReadWriteBatchProto1000000(b *testing.B) { benchmarkReadWriteBatchProto(1000000, b) }
+
+func benchmarkReadWriteLengthPrefixedProto(size int, b *testing.B) {
+	var msgs []test.Message
+
+	for i := 0; i < size; i++ {
+		msg := test.Message{Data: "This is a relatively short string message."}
+		msgs = append(msgs, msg)
+	}
+
+	for i := 0; i < b.N; i++ {
+		var buf bytes.Buffer
+		w := lengthprefixed.NewWriter(&buf)
+
+		for _, msg := range msgs {
+			raw, err := proto.Marshal(&msg)
+			if err != nil {
+				panic(err)
+			}
+			w.Write(raw)
+		}
+
+		r := lengthprefixed.NewReader(&buf)
+
+		for {
+			b, err := r.ReadFrame()
+			if err == io.EOF {
+				break
+			}
+
+			var msg test.Message
+			err = proto.Unmarshal(b, &msg)
+			if err != nil {
+				panic(err)
+			}
+		}
+	}
+}
+
+func BenchmarkReadWriteLengthPrefixedProto10(b *testing.B) {
+	benchmarkReadWriteLengthPrefixedProto(10, b)
+}
+func BenchmarkReadWriteLengthPrefixedProto1000(b *testing.B) {
+	benchmarkReadWriteLengthPrefixedProto(1000, b)
+}
+func BenchmarkReadWriteLengthPrefixedProto100000(b *testing.B) {
+	benchmarkReadWriteLengthPrefixedProto(100000, b)
+}
+func BenchmarkReadWriteLengthPrefixedProto1000000(b *testing.B) {
+	benchmarkReadWriteLengthPrefixedProto(1000000, b)
+}
