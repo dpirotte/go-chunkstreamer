@@ -137,6 +137,9 @@ func benchmarkReadWriteBatchJSON(size int, b *testing.B) {
 
 		var parsedMsgs [][]byte
 		err = json.Unmarshal(buf.Bytes(), &parsedMsgs)
+		if err != nil {
+			panic(err)
+		}
 
 		for range parsedMsgs {
 		}
