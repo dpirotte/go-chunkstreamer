@@ -41,24 +41,22 @@ func (w *Writer) Write(b []byte) (int, error) {
 	varintBuf := make([]byte, binary.MaxVarintLen64)
 	varintLen := binary.PutUvarint(varintBuf, uint64(len(b)))
 
-	n1, err := w.wr.Write(varintBuf[:varintLen])
-	if err != nil {
-		return n1, err
+	if n, err := w.wr.Write(varintBuf[:varintLen]); err != nil {
+		return n, err
 	}
 
-	n2, err := w.wr.Write(b)
+	n, err := w.wr.Write(b)
 	if err != nil {
-		return n2, err
+		return n, err
 	}
 
 	w.hasher.Write(b)
-	err = binary.Write(w.wr, binary.BigEndian, w.hasher.Sum64())
-	if err != nil {
-		return n2, err
+	if binary.Write(w.wr, binary.BigEndian, w.hasher.Sum64()); err != nil {
+		return n, err
 	}
 	w.hasher.Reset()
 
-	return n2, nil
+	return n, nil
 }
 
 // A Reader is a wrapper designed to read frames from an underlying io.Reader.
