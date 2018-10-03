@@ -7,6 +7,7 @@
 package chunkstreamer
 
 import (
+	"bufio"
 	"encoding/binary"
 	"errors"
 	"hash"
@@ -62,14 +63,14 @@ func (w *Writer) Write(b []byte) (int, error) {
 // A Reader is a wrapper designed to read chunks from an
 // underlying io.Reader
 type Reader struct {
-	rd     io.Reader
+	rd     *bufio.Reader
 	hasher hash.Hash64
 }
 
 // NewReader returns a new Reader reading from r.
 func NewReader(r io.Reader) *Reader {
 	return &Reader{
-		rd:     r,
+		rd:     bufio.NewReader(r),
 		hasher: xxhash.New(),
 	}
 }
