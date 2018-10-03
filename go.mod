@@ -1,4 +1,4 @@
-module github.com/dpirotte/go-chunkstreamer
+module github.com/dpirotte/go-lengthprefixed
 
 require (
 	github.com/cespare/xxhash v1.1.0

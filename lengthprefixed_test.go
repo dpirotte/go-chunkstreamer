@@ -1,4 +1,4 @@
-package chunkstreamer_test
+package lengthprefixed_test
 
 import (
 	"bytes"
@@ -8,7 +8,7 @@ import (
 	"io"
 	"testing"
 
-	"github.com/dpirotte/go-chunkstreamer"
+	"github.com/dpirotte/go-lengthprefixed"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -20,7 +20,7 @@ func TestHappyPath(t *testing.T) {
 	}
 
 	var buf bytes.Buffer
-	w := chunkstreamer.NewWriter(&buf)
+	w := lengthprefixed.NewWriter(&buf)
 
 	l := 0
 	for _, chunk := range chunks {
@@ -36,7 +36,7 @@ func TestHappyPath(t *testing.T) {
 		assert.Equal(t, l, buf.Len())
 	}
 
-	r := chunkstreamer.NewReader(&buf)
+	r := lengthprefixed.NewReader(&buf)
 
 	for i := 0; i < len(chunks); i++ {
 		b, err := r.ReadFrame()
@@ -54,24 +54,24 @@ func TestHappyPath(t *testing.T) {
 
 func TestInvalidChecksum(t *testing.T) {
 	var buf bytes.Buffer
-	w := chunkstreamer.NewWriter(&buf)
+	w := lengthprefixed.NewWriter(&buf)
 
 	w.Write([]byte("This message will be garbled"))
 
 	bytes := buf.Bytes()
 	bytes[5]++ // mangle the first character of the chunk
 
-	r := chunkstreamer.NewReader(&buf)
+	r := lengthprefixed.NewReader(&buf)
 	b, err := r.ReadFrame()
 	assert.Nil(t, b)
 	if assert.Error(t, err) {
-		assert.Equal(t, chunkstreamer.ErrChecksum, err)
+		assert.Equal(t, lengthprefixed.ErrChecksum, err)
 	}
 }
 
 func benchmarkWrite(size int, b *testing.B) {
 	var buf bytes.Buffer
-	w := chunkstreamer.NewWriter(&buf)
+	w := lengthprefixed.NewWriter(&buf)
 
 	bytes := make([]byte, size)
 	rand.Read(bytes)
@@ -95,13 +95,13 @@ func benchmarkReadWriteBatch(size int, b *testing.B) {
 
 	for i := 0; i < b.N; i++ {
 		var buf bytes.Buffer
-		w := chunkstreamer.NewWriter(&buf)
+		w := lengthprefixed.NewWriter(&buf)
 
 		for _, s := range msgs {
 			w.Write([]byte(s))
 		}
 
-		r := chunkstreamer.NewReader(&buf)
+		r := lengthprefixed.NewReader(&buf)
 		for {
 			_, err := r.ReadFrame()
 			if err == io.EOF {

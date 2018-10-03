@@ -1,10 +1,10 @@
-// Package chunkstreamer implements a Reader and Writer for reading,
+// Package lengthprefixed implements a Reader and Writer for reading,
 // and writing, streams of bytes containing irregularly sized "chunks".
 //
 // Each chunk contains three parts: 4 bytes (uint32) representing the
 // following part's size, N bytes of data, and 8 bytes (uint64) of
 // checksum for the previous part.
-package chunkstreamer
+package lengthprefixed
 
 import (
 	"bufio"
@@ -18,7 +18,7 @@ import (
 
 // ErrChecksum is returned when a chunk's computed data checksum
 // match the checksum recorded after the data
-var ErrChecksum = errors.New("chunkstreamer: invalid checksum")
+var ErrChecksum = errors.New("lengthprefixed: invalid checksum")
 
 // Writer implements an io.Writer that first writes the length
 // of the provided byte slice as a uint32, then writes the byte
